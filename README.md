@@ -33,7 +33,7 @@ Arduino
         ├── qmc5883p.h
         ├── qmc5883p.cpp
         ├── library.properties
-        └── README.md (this file)
+        └── README.md 
 ```
 
 The Arduino IDE will automatically detect the library on the next startup.
