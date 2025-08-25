@@ -1,12 +1,12 @@
 // qmc5883p.h
 #pragma once
-#include <Arduino.h>
-#include <Wire.h>
+#include "cstdint"
+#include "driver/i2c_master.h"
 
 class QMC5883P {
 public:
     // Constructor: optionally different SDA/SCL pins & I²C address
-    QMC5883P(uint8_t addr = 0x2C, TwoWire &bus = Wire);
+    QMC5883P(uint8_t addr = 0x2C, i2c_port_num_t i2c_port = I2C_NUM_0, gpio_num_t sda_pin = GPIO_NUM_NC, gpio_num_t scl_pin = GPIO_NUM_NC);
 
     bool begin();                              // Init, true = OK
     bool readXYZ(float *xyz);                  // xyz[3] → µT, true = new data and calibrated
@@ -16,7 +16,11 @@ public:
 
 private:
     uint8_t _addr;
-    TwoWire *_bus;
+    i2c_port_num_t _i2c_port;
+    gpio_num_t _sda_pin;
+    gpio_num_t _scl_pin;
+    i2c_master_bus_handle_t _bus_handle;
+    i2c_master_dev_handle_t _dev_handle;
 
     // Calibration parameters
     float _offX, _offY, _offZ;
