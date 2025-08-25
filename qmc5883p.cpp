@@ -2,7 +2,7 @@
 #include "qmc5883p.h"
 #include <Arduino.h>
 
-/* Register-Adressen */
+/* Register addresses */
 #define REG_CHIP_ID        0x00
 #define REG_DATA_OUT_X_LSB 0x01
 #define REG_STATUS         0x09
@@ -17,12 +17,12 @@ QMC5883P::QMC5883P(uint8_t addr, TwoWire &bus)
       _lastReadTime(0) {}
 
 bool QMC5883P::begin() {
-    _bus->begin(); // Pins vorher im Sketch setzen
+    _bus->begin(); // Set pins beforehand in the sketch
 
     uint8_t id;
     if (!readReg(REG_CHIP_ID, &id, 1) || id != 0x80) return false;
 
-    // Standard-Konfiguration: 200 Hz, Continuous, ±2G
+    // Default configuration: 200 Hz, Continuous, ±2G
     writeReg(0x0D, 0x40); delay(10);
     writeReg(0x29, 0x06); delay(10);
     writeReg(REG_CTL1, 0xCF); delay(10);
@@ -35,13 +35,13 @@ bool QMC5883P::begin() {
 bool QMC5883P::readRaw() {
     unsigned long now = millis();
     if (now - _lastReadTime < _minInterval) {
-        // noch nicht genug Zeit vergangen, verwende Cache
+        // Not enough time has passed yet, use cache
         return false;
     }
 
     uint8_t status;
     if (!readReg(REG_STATUS, &status, 1) || !(status & 0x01)) {
-        // kein neues Datum
+        // No new data
         return false;
     }
 
@@ -56,9 +56,9 @@ bool QMC5883P::readRaw() {
 }
 
 bool QMC5883P::readXYZ(float *xyz) {
-    if (!readRaw()) return false; // keine neuen Daten
+    if (!readRaw()) return false; // No new data
 
-    // Rohdaten → µT und kalibrieren (Hard- + Soft-Iron)
+    // Raw data → µT and apply calibration (Hard- + Soft-Iron)
     float x = _lastRawX / 1000.0f;
     float y = _lastRawY / 1000.0f;
     float z = _lastRawZ / 1000.0f;
@@ -70,21 +70,21 @@ bool QMC5883P::readXYZ(float *xyz) {
 }
 
 float QMC5883P::getHeadingDeg(float declDeg) {
-    // versuche neue Daten zu lesen, verwende ansonsten letzten Cache
+    // Try to read new data, otherwise use last cache
     readRaw();
 
-    // gleiche Umrechnung wie in readXYZ, ohne Rückgabewert
+    // Same conversion as in readXYZ, without return value
     float x = (_lastRawX / 1000.0f - _offX) * _scaleX;
     float y = (_lastRawY / 1000.0f - _offY) * _scaleY;
 
-    // 1) Grundwinkel (-π … π)
+    // 1) Base angle (-π … π)
     float hdg = atan2(y, x);
-    // 2) Deklination hinzufügen (deg → rad)
+    // 2) Add declination (deg → rad)
     hdg += declDeg * DEG_TO_RAD;
-    // 3) Normieren auf 0 … 2π
+    // 3) Normalize to 0 … 2π
     if (hdg < 0)        hdg += TWO_PI;
     else if (hdg > TWO_PI) hdg -= TWO_PI;
-    // 4) in Grad
+    // 4) Convert to degrees
     return hdg * RAD_TO_DEG;
 }
 
