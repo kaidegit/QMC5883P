@@ -147,5 +147,6 @@ bool QMC5883P::readReg(uint8_t reg, uint8_t *buf, uint8_t len) {
 }
 
 bool QMC5883P::writeReg(uint8_t reg, uint8_t val) {
-    return ESP_OK == i2c_master_transmit(_dev_handle, &reg, 1,  -1);
+    uint8_t data[2] = {reg, val};
+    return ESP_OK == i2c_master_transmit(_dev_handle, data, 2, -1);
 }
